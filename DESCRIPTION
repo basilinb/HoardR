@@ -1,0 +1,21 @@
+Package: HoardR
+Title: Cache and Save R Objects, Tables, and Figures
+Version: 0.0.0.9000
+Authors@R: 
+    person("Basilin", "Benson", , "bbenson@benaroyaresearch.org", role = c("aut", "cre"))
+Description: A unified toolkit for caching and saving R objects, tables, and 
+    figures. Provides smart caching that loads from disk if available, otherwise 
+    computes and saves. Supports RDS for complex objects, CSV/TSV for flat 
+    tables, and multiple figure formats via ggplot2.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+Imports:
+    ggplot2,
+    readr,
+    stats,
+    tools
+Suggests:
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3

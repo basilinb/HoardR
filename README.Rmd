@@ -1,15 +1,24 @@
+---
+output: github_document
+---
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+```
 
 # HoardR
 
 <!-- badges: start -->
-
 <!-- badges: end -->
 
-HoardR is a unified toolkit for **caching and saving R objects, tables,
-and figures**. It provides smart caching that loads from disk if
-available, otherwise computes and saves.
+HoardR is a unified toolkit for **caching and saving R objects, tables, and figures**. It provides smart caching that loads from disk if available, otherwise computes and saves. 
 
 Key features:
 
@@ -21,8 +30,7 @@ Key features:
 
 ## Installation
 
-You can install the development version of HoardR from
-[GitHub](https://github.com/) with:
+You can install the development version of HoardR from [GitHub](https://github.com/) with:
 
 ``` r
 # install.packages("pak")
@@ -31,19 +39,19 @@ pak::pak("basilinb/HoardR")
 
 ## Core Functions
 
-| Function               | Description                                        |
-|------------------------|----------------------------------------------------|
-| `make_path()`          | Build consistent paths: `dir/project_analysis.ext` |
-| `cache()`              | Load if cached, otherwise compute + save           |
-| `save_figures()`       | Save ggplot/patchwork to one or more files         |
-| `cache_with_figures()` | Cache data + save figures in one call              |
-| `safe_filename()`      | Build collision-safe file paths                    |
+| Function | Description |
+|----------|-------------|
+| `make_path()` | Build consistent paths: `dir/project_analysis.ext` |
+| `cache()` | Load if cached, otherwise compute + save |
+| `save_figures()` | Save ggplot/patchwork to one or more files |
+| `cache_with_figures()` | Cache data + save figures in one call |
+| `safe_filename()` | Build collision-safe file paths |
 
 ## Examples
 
 ### Build paths with `make_path()`
 
-``` r
+```{r example-make-path, eval = FALSE}
 library(HoardR)
 
 # Single path
@@ -57,7 +65,7 @@ make_path("P01", "results", c("csv", "rds"), "Results")
 
 ### Cache complex objects
 
-``` r
+```{r example-cache, eval = FALSE}
 # Cache a DGEList, EList, or any complex object
 dat_clean <- cache(
   make_path(project, "voom_clean", "rds", dir_data),
@@ -71,7 +79,7 @@ dat_clean <- cache(
 
 ### Cache flat tables to CSV + RDS
 
-``` r
+```{r example-cache-table, eval = FALSE}
 # Save to both CSV (for sharing) and RDS (for R)
 results <- cache(
   make_path(project, "results", c("csv", "rds"), dir_results),
@@ -83,7 +91,7 @@ results <- cache(
 
 ### Save figures
 
-``` r
+```{r example-figures, eval = FALSE}
 # Save to multiple formats; skips if files already exist
 save_figures(
   p_pca,
@@ -94,7 +102,7 @@ save_figures(
 
 ### Cache data + figures together
 
-``` r
+```{r example-cache-figures, eval = FALSE}
 # One compute block → cache data + save figures
 dat_clean <- cache_with_figures(
   data_paths   = make_path(project, "voom_clean", "rds", dir_data),
@@ -109,18 +117,13 @@ dat_clean <- cache_with_figures(
 
 ## Design Principles
 
-1.  **Complex objects require RDS** — Attempting to save a DGEList,
-    EList, or nested list to CSV/TSV errors immediately with a clear
-    message.
+1. **Complex objects require RDS** — Attempting to save a DGEList, EList, or nested list to CSV/TSV errors immediately with a clear message.
 
-2.  **Figures are cached too** — If the output file exists and
-    `overwrite = FALSE`, `ggsave()` is skipped entirely.
+2. **Figures are cached too** — If the output file exists and `overwrite = FALSE`, `ggsave()` is skipped entirely.
 
-3.  **Flexible compute blocks** — Pass either a bare `{ }` expression or
-    a `function()` / `\()` lambda.
+3. **Flexible compute blocks** — Pass either a bare `{ }` expression or a `function()` / `\()` lambda.
 
-4.  **Consistent naming** — Always use
-    `make_path(project, analysis, ext, dir)` to build paths.
+4. **Consistent naming** — Always use `make_path(project, analysis, ext, dir)` to build paths.
 
 ## License
 
