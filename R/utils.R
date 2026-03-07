@@ -51,28 +51,42 @@
 .write_one <- function(obj, path, csv_opts = list()) {
   ext <- .ext(path)
   .ensure_dir(path)
-
-  switch(
-    ext,
-    rds = saveRDS(obj, file = path),
-    csv = {
-      if (!.is_flat(obj)) {
-        stop("Cannot save a <", class(obj)[1L], "> to CSV.\n",
-             "  CSV and TSV support flat data.frames / tibbles only.\n",
-             "  Use a .rds path for complex objects.", call. = FALSE)
-      }
-      do.call(readr::write_csv, c(list(x = obj, file = path), csv_opts))
-    },
-    tsv = {
-      if (!.is_flat(obj)) {
-        stop("Cannot save a <", class(obj)[1L], "> to TSV.\n",
-             "  CSV and TSV support flat data.frames / tibbles only.\n",
-             "  Use a .rds path for complex objects.", call. = FALSE)
-      }
-      do.call(readr::write_tsv, c(list(x = obj, file = path), csv_opts))
-    },
-    stop("Cannot write format '.", ext, "'. Supported: rds, csv, tsv.", call. = FALSE)
+  
+  # 1. Create a hidden temp path in the SAME directory
+  tmp_path <- tempfile(
+    pattern = paste0(".tmp_", basename(path), "_"), 
+    tmpdir  = dirname(path)
   )
 
-  message("  Saved : ", path)
+  # 2. Use tryCatch to ensure we clean up the temp file if things crash
+  tryCatch({
+    switch(
+      ext,
+      rds = saveRDS(obj, file = tmp_path),
+      csv = {
+        if (!.is_flat(obj)) {
+          stop("Cannot save a <", class(obj)[1L], "> to CSV.", call. = FALSE)
+        }
+        do.call(readr::write_csv, c(list(x = obj, file = tmp_path), csv_opts))
+      },
+      tsv = {
+        if (!.is_flat(obj)) {
+          stop("Cannot save a <", class(obj)[1L], "> to TSV.", call. = FALSE)
+        }
+        do.call(readr::write_tsv, c(list(x = obj, file = tmp_path), csv_opts))
+      },
+      stop("Unsupported format: .", ext, call. = FALSE)
+    )
+
+    # 3. Final Step: Atomic Swap
+    # If the code gets here, the file is fully written.
+    file.rename(tmp_path, path)
+    message(" Saved : ", path)
+    
+  }, error = function(e) {
+    # Clean up the partial/broken temp file if it exists
+    if (file.exists(tmp_path)) unlink(tmp_path)
+    stop(e$message, call. = FALSE)
+  })
 }
+
