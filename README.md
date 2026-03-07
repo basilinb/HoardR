@@ -5,6 +5,7 @@
 
 <!-- badges: start -->
 
+[![R-CMD-check](https://github.com/basilinb/HoardR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/basilinb/HoardR/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
 HoardR is a unified toolkit for **caching and saving R objects, tables,

@@ -16,6 +16,7 @@ knitr::opts_chunk$set(
 # HoardR
 
 <!-- badges: start -->
+[![R-CMD-check](https://github.com/basilinb/HoardR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/basilinb/HoardR/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
 HoardR is a unified toolkit for **caching and saving R objects, tables, and figures**. It provides smart caching that loads from disk if available, otherwise computes and saves. 
