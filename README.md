@@ -8,16 +8,20 @@
 [![R-CMD-check](https://github.com/basilinb/HoardR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/basilinb/HoardR/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
-HoardR is a unified toolkit for **caching and saving R objects, tables,
-and figures**. It provides smart caching that loads from disk if
-available, otherwise computes and saves.
+HoardR is a unified toolkit for **organising project directories,
+caching R objects, and saving tables and figures**. It provides a
+consistent folder structure for bioinformatics projects, smart caching
+that loads from disk if available, and helpers for saving figures and
+flat tables.
 
 Key features:
 
+- **Project & experiment directories** via `init_project_dirs()` and
+  `init_experiment_dirs()`
 - **RDS** for complex objects (DGEList, EList, model fits, lists)
 - **CSV/TSV** for flat tables (data.frames, tibbles)
 - **PDF/PNG/SVG** and more for figures via ggplot2
-- **Consistent file naming** with `make_path()`
+- **Consistent file naming** with `make_path()` and `safe_filename()`
 - **Skip existing files** to avoid redundant computation
 
 ## Installation
@@ -32,28 +36,61 @@ pak::pak("basilinb/HoardR")
 
 ## Core Functions
 
-| Function               | Description                                        |
-|------------------------|----------------------------------------------------|
-| `make_path()`          | Build consistent paths: `dir/project_analysis.ext` |
-| `cache()`              | Load if cached, otherwise compute + save           |
-| `save_figures()`       | Save ggplot/patchwork to one or more files         |
-| `cache_with_figures()` | Cache data + save figures in one call              |
-| `safe_filename()`      | Build collision-safe file paths                    |
+### Directory initialisation
+
+| Function | Description |
+|----|----|
+| `init_project_dirs()` | Create standard project folder layout under Box storage |
+| `init_experiment_dirs()` | Create experiment-specific plot and result subdirectories |
+
+### Caching and saving
+
+| Function | Description |
+|----|----|
+| `make_path()` | Build consistent paths: `dir/project_analysis.ext` |
+| `safe_filename()` | Build collision-safe file paths (used by `make_path()`) |
+| `cache()` | Load if cached, otherwise compute + save |
+| `save_figures()` | Save ggplot/patchwork to one or more files |
+| `cache_with_figures()` | Cache data + save figures in one call |
 
 ## Examples
 
-### Build paths with `make_path()`
+### Set up a project
 
 ``` r
 library(HoardR)
 
+# Create standard folder layout under Box
+proj <- init_project_dirs(
+  project_number = "P513-5",
+  box_base = "~/Library/CloudStorage/Box-Box/BRI_Projects"
+)
+# proj$root, proj$plots, proj$results, proj$data_clean, proj$data_raw
+
+# Create experiment-specific subdirectories
+exp_dirs <- init_experiment_dirs(
+  proj,
+  experiment_name = "IL13_dose",
+  plot_subdirs    = c("volcano", "heatmap", "enrichment",
+                      "scatterplot", "boxplot", "GAM"),
+  result_subdirs  = c("GSEA", "Norm")
+)
+# exp_dirs$plots_volcano, exp_dirs$results_GSEA, etc.
+```
+
+### Build paths with `make_path()`
+
+``` r
 # Single path
 make_path("P01", "voom_clean", "rds", "DataClean")
-# → "DataClean/P01_voom_clean.rds"
+# -> "DataClean/P01_voom_clean.rds"
 
 # Multiple extensions at once (returns named vector)
 make_path("P01", "results", c("csv", "rds"), "Results")
-# → c(csv = "Results/P01_results.csv", rds = "Results/P01_results.rds")
+# -> c(csv = "Results/P01_results.csv", rds = "Results/P01_results.rds")
+
+# safe_filename() is called internally by make_path() to avoid
+# collisions when a file with that name already exists
 ```
 
 ### Cache complex objects
@@ -88,19 +125,21 @@ results <- cache(
 # Save to multiple formats; skips if files already exist
 save_figures(
   p_pca,
-  paths = make_path(project, "pca", c("pdf", "png"), dir_figs),
-  width = 8, height = 6
+  paths  = make_path(project, "pca", c("pdf", "png"), dir_figs),
+  width  = 8,
+  height = 6
 )
 ```
 
 ### Cache data + figures together
 
 ``` r
-# One compute block → cache data + save figures
+# One compute block -> cache data + save figures
 dat_clean <- cache_with_figures(
   data_paths   = make_path(project, "voom_clean", "rds", dir_data),
   figure_paths = make_path(project, "pca", c("pdf", "png"), dir_figs),
-  width = 8, height = 6,
+  width  = 8,
+  height = 6,
   {
     obj <- build_voom(dat_raw)
     list(data = obj, plot = plot_pca(obj))
@@ -110,17 +149,17 @@ dat_clean <- cache_with_figures(
 
 ## Design Principles
 
-1.  **Complex objects require RDS** — Attempting to save a DGEList,
+1.  **Consistent structure** — `init_project_dirs()` and
+    `init_experiment_dirs()` enforce a shared folder layout across all
+    projects and experiments.
+2.  **Complex objects require RDS** — Attempting to save a DGEList,
     EList, or nested list to CSV/TSV errors immediately with a clear
     message.
-
-2.  **Figures are cached too** — If the output file exists and
+3.  **Figures are cached too** — If the output file exists and
     `overwrite = FALSE`, `ggsave()` is skipped entirely.
-
-3.  **Flexible compute blocks** — Pass either a bare `{ }` expression or
+4.  **Flexible compute blocks** — Pass either a bare `{ }` expression or
     a `function()` / `\()` lambda.
-
-4.  **Consistent naming** — Always use
+5.  **Consistent naming** — Always use
     `make_path(project, analysis, ext, dir)` to build paths.
 
 ## License
