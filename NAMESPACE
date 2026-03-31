@@ -2,6 +2,8 @@
 
 export(cache)
 export(cache_with_figures)
+export(init_experiment_dirs)
+export(init_project_dirs)
 export(make_path)
 export(safe_filename)
 export(save_figures)
