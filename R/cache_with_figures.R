@@ -65,6 +65,7 @@
 #' )
 #' }
 #'
+#' @importFrom rlang enquo quo_get_expr eval_tidy
 #' @export
 cache_with_figures <- function(
   data_paths,

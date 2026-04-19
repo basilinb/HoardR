@@ -29,6 +29,7 @@
 #'
 #' @return The cached or freshly-computed object (invisibly).
 #'
+#' @importFrom rlang enquo quo_get_expr eval_tidy
 #' @examples
 #' \dontrun{
 #' # Cache a complex object
