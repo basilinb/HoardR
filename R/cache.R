@@ -49,17 +49,20 @@
 #'
 #' @export
 cache <- function(
-    paths,
-    expr,
-    overwrite = FALSE,
-    verbose = TRUE,
-    csv_opts = list(),
-    csv_read_args = list()) {
+  paths,
+  expr,
+  overwrite = FALSE,
+  verbose = TRUE,
+  csv_opts = list(),
+  csv_read_args = list()
+) {
+  # ── Capture FIRST, before expr is touched ──────────────────────────────────
+  expr_quo <- rlang::enquo(expr)
+
   paths <- as.character(paths)
   if (!length(paths)) {
     stop("`paths` must contain at least one file path.", call. = FALSE)
   }
-
   exts <- .ext(paths)
   bad <- setdiff(exts, c(.rds_exts, .table_exts))
   if (length(bad)) {
@@ -82,7 +85,6 @@ cache <- function(
     } else {
       NULL
     }
-
     if (!is.null(load_from)) {
       if (verbose) {
         message("Loading cached: ", load_from)
@@ -96,12 +98,14 @@ cache <- function(
     message("Cache miss - computing ...")
   }
 
-  # Support both bare { } block and function() / \() lambda
-  expr_sub <- substitute(expr)
-  obj <- if (is.function(expr)) {
-    expr()
+  # Check the captured quosure expression, not `expr` itself
+  expr_inner <- rlang::quo_get_expr(expr_quo)
+  obj <- if (is.call(expr_inner) && expr_inner[[1]] == as.name("function")) {
+    # Lambda / anonymous function: e.g. \() { ... } or function() { ... }
+    fn <- rlang::eval_tidy(expr_quo)
+    fn()
   } else {
-    eval(expr_sub, envir = parent.frame())
+    rlang::eval_tidy(expr_quo)
   }
 
   if (is.null(obj)) {
@@ -115,6 +119,5 @@ cache <- function(
   for (p in paths) {
     .write_one(obj, p, csv_opts)
   }
-
   invisible(obj)
 }

@@ -67,18 +67,22 @@
 #'
 #' @export
 cache_with_figures <- function(
-    data_paths,
-    figure_paths = NULL,
-    expr,
-    overwrite = FALSE,
-    verbose = TRUE,
-    width = NA,
-    height = NA,
-    units = "in",
-    dpi = 300,
-    csv_opts = list(),
-    csv_read_args = list(),
-    ...) {
+  data_paths,
+  figure_paths = NULL,
+  expr,
+  overwrite = FALSE,
+  verbose = TRUE,
+  width = NA,
+  height = NA,
+  units = "in",
+  dpi = 300,
+  csv_opts = list(),
+  csv_read_args = list(),
+  ...
+) {
+  # ── Capture FIRST, before expr is touched ──────────────────────────────────
+  expr_quo <- rlang::enquo(expr)
+
   data_paths <- as.character(data_paths)
 
   # ── Cache hit: load data and return early ───────────────────────────────────
@@ -93,7 +97,6 @@ cache_with_figures <- function(
     } else {
       NULL
     }
-
     if (!is.null(load_from)) {
       if (verbose) {
         message("Loading cached: ", load_from)
@@ -107,11 +110,12 @@ cache_with_figures <- function(
     message("Cache miss - computing ...")
   }
 
-  expr_sub <- substitute(expr)
-  result <- if (is.function(expr)) {
-    expr()
+  expr_inner <- rlang::quo_get_expr(expr_quo)
+  result <- if (is.call(expr_inner) && expr_inner[[1]] == as.name("function")) {
+    fn <- rlang::eval_tidy(expr_quo)
+    fn()
   } else {
-    eval(expr_sub, envir = parent.frame())
+    rlang::eval_tidy(expr_quo)
   }
 
   # ── Validate result structure ───────────────────────────────────────────────
@@ -134,7 +138,6 @@ cache_with_figures <- function(
   # ── Save figures ────────────────────────────────────────────────────────────
   if (!is.null(figure_paths)) {
     if (is.list(figure_paths)) {
-      # Named list: each name -> a plot in result$plots
       if (!"plots" %in% names(result)) {
         stop(
           "figure_paths is a named list but the expr block returned no `$plots` element.\n",
@@ -145,8 +148,11 @@ cache_with_figures <- function(
       for (nm in names(figure_paths)) {
         if (!nm %in% names(result$plots)) {
           stop(
-            "Plot '", nm, "' not found in result$plots. ",
-            "Available: ", paste(names(result$plots), collapse = ", "),
+            "Plot '",
+            nm,
+            "' not found in result$plots. ",
+            "Available: ",
+            paste(names(result$plots), collapse = ", "),
             call. = FALSE
           )
         }
@@ -163,7 +169,6 @@ cache_with_figures <- function(
         )
       }
     } else {
-      # Plain vector: save result$plot (or first element of result$plots)
       plt <- result$plot %||% result$plots[[1L]]
       if (is.null(plt)) {
         stop(
