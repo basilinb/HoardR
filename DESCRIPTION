@@ -1,6 +1,6 @@
 Package: HoardR
 Title: Cache and Save R Objects, Tables, and Figures
-Version: 0.0.0.9000
+Version: 1.0.0
 Authors@R: 
     person("Basilin", "Benson", , "bbenson@benaroyaresearch.org", role = c("aut", "cre"))
 Description: A unified toolkit for caching and saving R objects, tables, and 
